@@ -1,1 +1,719 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Конфигуратор контейнерной площадки АО «Спецавтобаза»: расчёт контейнеров, схема, проверка норм и смета.">
+  <title>Конфигуратор контейнерной площадки — АО «Спецавтобаза»</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner wrap">
+      <span class="org" id="orgName">АО «Спецавтобаза»</span>
+      <span class="topbar-note">Конфигуратор площадки</span>
+    </div>
+  </header>
 
+  <main class="wrap page">
+    <div class="page-title">
+      <div class="page-title-main">
+        <h1>Конфигуратор контейнерной площадки</h1>
+        <p>Расчёт количества контейнеров, схемы, проверки по нормативам и сметы. Результат обновляется при изменении параметров.</p>
+      </div>
+      <div class="page-actions">
+        <button type="button" class="print-button" id="printBtn">Печать</button>
+      </div>
+    </div>
+
+    <div class="layout">
+    <!-- Блок А. Расчёт контейнеров -->
+    <section class="card" id="block-a" aria-labelledby="a-title">
+      <div class="card-head">
+        <h2 id="a-title">А. Расчёт контейнеров</h2>
+        <p class="card-sub">Объём накопления, количество контейнеров и распределение по площадкам.</p>
+      </div>
+
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="field">
+            <label for="residents">Число жителей</label>
+            <input id="residents" type="number" inputmode="numeric" min="1" max="5000" step="1"
+                   autocomplete="off" aria-describedby="residentsHint residentsError">
+            <p class="hint" id="residentsHint">Целое число от 1 до 5000.</p>
+            <p class="field-error" id="residentsError" role="alert" hidden></p>
+          </div>
+
+          <div class="field">
+            <span class="label" id="siteTypeLabel">Тип площадки</span>
+            <div class="segmented" role="radiogroup" aria-labelledby="siteTypeLabel">
+              <label>
+                <input type="radio" name="siteType" value="open">
+                <span>Открытая</span>
+              </label>
+              <label>
+                <input type="radio" name="siteType" value="closed">
+                <span>Закрытая</span>
+              </label>
+            </div>
+            <p class="hint">Влияет на ограждение, ворота и педальные крышки.</p>
+          </div>
+
+          <div class="field">
+            <span class="label" id="rsoLabel">Раздельный сбор (РСО)</span>
+            <div class="segmented" role="radiogroup" aria-labelledby="rsoLabel">
+              <label>
+                <input type="radio" name="rso" value="yes">
+                <span>Да</span>
+              </label>
+              <label>
+                <input type="radio" name="rso" value="no">
+                <span>Нет</span>
+              </label>
+            </div>
+            <p class="hint">При РСО часть контейнеров становится оранжевой.</p>
+          </div>
+
+          <div class="field">
+            <span class="label" id="seasonLabel">Периодичность вывоза</span>
+            <div class="segmented" role="radiogroup" aria-labelledby="seasonLabel">
+              <label>
+                <input type="radio" name="season" value="summer">
+                <span id="seasonSummerLabel">Лето · 1 день</span>
+              </label>
+              <label>
+                <input type="radio" name="season" value="winter">
+                <span id="seasonWinterLabel">Зима · 3 дня</span>
+              </label>
+            </div>
+            <p class="hint" id="seasonHint">Летом — ежедневно, зимой — раз в 3 суток.</p>
+          </div>
+
+          <label class="switch-card" for="kgoRequired">
+            <input id="kgoRequired" type="checkbox" checked disabled>
+            <span class="switch-text">
+              <strong>Отсек КГО</strong>
+              <small>Обязателен по ТЗ — отключить нельзя.</small>
+            </span>
+          </label>
+        </div>
+
+        <div class="result-panel" aria-live="polite">
+          <div class="metrics">
+            <div class="metric">
+              <span>Всего контейнеров по расчёту (без КГО)</span>
+              <strong id="totalContainers">—</strong>
+            </div>
+            <div class="metric">
+              <span>Площадок</span>
+              <strong id="sitesCount">—</strong>
+            </div>
+            <div class="metric">
+              <span>Объём между вывозами</span>
+              <strong id="volumeBetween">—</strong>
+            </div>
+          </div>
+
+          <div class="split">
+            <div>
+              <h3>На одну площадку</h3>
+              <ul class="dot-list">
+                <li><span class="dot green" aria-hidden="true"></span>Смешанные: <strong id="greenPerSite">—</strong></li>
+                <li><span class="dot orange" aria-hidden="true"></span>Пластик: <strong id="orangePerSite">—</strong></li>
+                <li><span class="dot kgo" aria-hidden="true"></span>Отсек КГО: <strong id="kgoPerSite">—</strong></li>
+                <li class="dot-total">Итого контейнеров (без КГО): <strong id="totalPerSite">—</strong></li>
+              </ul>
+              <p class="dot-note">Отсек КГО — отдельный элемент площадки, в число контейнеров не входит.</p>
+            </div>
+            <div class="calc-meta">
+              <p id="periodNote">—</p>
+              <p id="installedNote">—</p>
+            </div>
+          </div>
+
+          <div class="alert alert-warning" id="calcWarning" role="alert" hidden></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Блок В. Схема -->
+    <section class="card" id="block-b" aria-labelledby="b-title">
+      <div class="card-head">
+        <h2 id="b-title">В. Схема площадки</h2>
+        <p class="card-sub">Вид сверху, габариты и ограждение. Схема перерисовывается автоматически.</p>
+      </div>
+
+      <div class="card-body">
+        <div class="scheme-toolbar">
+          <p class="scheme-caption" id="schemeCaption">Схема 1 площадки</p>
+          <p class="scheme-hint">Схему можно прокрутить по горизонтали →</p>
+        </div>
+
+        <div class="scheme-scroll" id="schemeScroll" tabindex="0" aria-label="Схема площадки, прокручивается по горизонтали">
+          <div id="schemeSvg"></div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <span>Ширина</span>
+            <strong id="geoWidth">—</strong>
+          </div>
+          <div class="stat">
+            <span>Глубина</span>
+            <strong id="geoDepth">—</strong>
+          </div>
+          <div class="stat">
+            <span>Площадь</span>
+            <strong id="geoArea">—</strong>
+          </div>
+          <div class="stat">
+            <span id="geoPerimeterLabel">Периметр ограждения</span>
+            <strong id="geoPerimeter">—</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Блок Г. Проверка по нормам -->
+    <section class="card" id="block-g" aria-labelledby="g-title">
+      <div class="card-head">
+        <h2 id="g-title">Г. Проверка по нормам</h2>
+        <p class="card-sub">Санитарные расстояния, условия подъезда и чек-лист требований ТЗ.</p>
+      </div>
+
+      <div class="card-body">
+        <div class="norms-grid">
+          <div class="field">
+            <label for="houseDistance">До ближайшего жилого дома, м</label>
+            <input id="houseDistance" type="text" inputmode="decimal" autocomplete="off"
+                   aria-describedby="houseDistanceError">
+            <p class="field-error" id="houseDistanceError" role="alert" hidden></p>
+          </div>
+
+          <div class="field">
+            <label for="playgroundDistance">До детской / спортивной площадки, м</label>
+            <input id="playgroundDistance" type="text" inputmode="decimal" autocomplete="off"
+                   aria-describedby="playgroundDistanceError">
+            <p class="field-error" id="playgroundDistanceError" role="alert" hidden></p>
+          </div>
+
+          <div class="field">
+            <label for="medicalDistance">До медицинской организации, м</label>
+            <input id="medicalDistance" type="text" inputmode="decimal" autocomplete="off"
+                   aria-describedby="medicalDistanceHint medicalDistanceError">
+            <p class="hint" id="medicalDistanceHint">Необязательно. Пусто — проверка не выполняется.</p>
+            <p class="field-error" id="medicalDistanceError" role="alert" hidden></p>
+          </div>
+        </div>
+
+        <div class="access-grid">
+          <label class="check-card" for="turnaround">
+            <input id="turnaround" type="checkbox">
+            <span>
+              <span id="turnaroundText">Сквозной проезд или разворотная площадка 12×12 м</span>
+              <small>Без этого подъезд мусоровоза не обеспечен.</small>
+            </span>
+          </label>
+          <label class="check-card" for="accessFree">
+            <input id="accessFree" type="checkbox">
+            <span>
+              Подъезд свободен: нет парковки, бордюров, деревьев
+              <small>Проверьте фактические препятствия на подъезде.</small>
+            </span>
+          </label>
+        </div>
+
+        <p class="checklist-title">Чек-лист самопроверки из ТЗ</p>
+        <div class="checklist" id="checklist"></div>
+
+        <div class="verdict" id="checkVerdict" aria-live="polite">
+          <span class="verdict-badge" id="verdictBadge">—</span>
+          <div>
+            <strong id="complianceText">—</strong>
+            <p id="normHint">—</p>
+          </div>
+        </div>
+
+        <div class="issues" id="checkIssues"></div>
+      </div>
+    </section>
+
+    <!-- Блок Д. Смета -->
+    <section class="card" id="block-d" aria-labelledby="d-title">
+      <div class="card-head">
+        <h2 id="d-title">Д. Смета</h2>
+        <p class="card-sub">Материалы и монтаж на одну площадку, наценка и итоговая стоимость.</p>
+      </div>
+
+      <div class="card-body">
+        <p class="table-note" id="budgetNote">—</p>
+
+        <div class="table-wrap">
+          <table class="budget-table">
+            <thead>
+              <tr>
+                <th scope="col">Позиция</th>
+                <th scope="col" class="num">Кол-во</th>
+                <th scope="col">Ед. изм.</th>
+                <th scope="col" class="num">Цена за ед., ₽</th>
+                <th scope="col" class="num">Сумма, ₽</th>
+              </tr>
+            </thead>
+            <tbody id="budgetBody"></tbody>
+          </table>
+        </div>
+
+        <div class="totals" id="budgetTotals"></div>
+      </div>
+    </section>
+    </div>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="calc.js"></script>
+  <script src="scheme.js"></script>
+  <script src="check.js"></script>
+  <script src="budget.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      const C = window.APP_CONFIG;
+      const App = window.App;
+      const $ = function (id) { return document.getElementById(id); };
+
+      const state = {
+        residents: C.defaults.residents,
+        siteType: C.defaults.siteType,
+        isRso: C.defaults.isRso,
+        season: C.defaults.season,
+        distances: {
+          house: C.defaults.houseDistance,
+          playground: C.defaults.playgroundDistance,
+          medical: null
+        },
+        access: {
+          turnaround: C.defaults.turnaround,
+          accessFree: C.defaults.accessFree
+        },
+        checklist: {}
+      };
+
+      C.checklist.forEach(function (item) {
+        state.checklist[item.id] = true;
+      });
+
+      /* Инициализация полей из config.js */
+      $('orgName').textContent = C.meta.orgName;
+
+      $('residents').min = String(C.validation.residentsMin);
+      $('residents').max = String(C.validation.residentsMax);
+      $('residents').value = String(C.defaults.residents);
+      $('residentsHint').textContent =
+        'Целое число от ' + C.validation.residentsMin + ' до ' + C.validation.residentsMax + '.';
+
+      const summerDays = C.waste.daysBetween.summer;
+      const winterDays = C.waste.daysBetween.winter;
+      $('seasonSummerLabel').textContent =
+        'Лето · ' + summerDays + ' ' + App.Utils.plural(summerDays, 'день', 'дня', 'дней');
+      $('seasonWinterLabel').textContent =
+        'Зима · ' + winterDays + ' ' + App.Utils.plural(winterDays, 'день', 'дня', 'дней');
+      $('seasonHint').textContent =
+        'Летом — ' +
+        (summerDays === 1 ? 'ежедневно' : 'раз в ' + summerDays + ' суток') +
+        ', зимой — раз в ' + winterDays + ' суток.';
+
+      const turnaroundSide = C.access.turnaroundSide;
+      $('turnaroundText').textContent =
+        'Сквозной проезд или разворотная площадка ' + turnaroundSide + '×' + turnaroundSide + ' м';
+
+      $('houseDistance').value = String(C.defaults.houseDistance).replace('.', ',');
+      $('playgroundDistance').value = String(C.defaults.playgroundDistance).replace('.', ',');
+      $('medicalDistance').value = C.defaults.medicalDistance == null
+        ? ''
+        : String(C.defaults.medicalDistance).replace('.', ',');
+      $('turnaround').checked = Boolean(C.defaults.turnaround);
+      $('accessFree').checked = Boolean(C.defaults.accessFree);
+
+      function setRadio(name, value) {
+        const radio = document.querySelector('input[name="' + name + '"][value="' + value + '"]');
+        if (radio) radio.checked = true;
+      }
+
+      setRadio('siteType', C.defaults.siteType);
+      setRadio('rso', C.defaults.isRso ? 'yes' : 'no');
+      setRadio('season', C.defaults.season);
+
+      /* Чек-лист строится из config.js */
+      const checklistWrap = $('checklist');
+      C.checklist.forEach(function (item) {
+        const label = document.createElement('label');
+        label.className = 'check-row';
+        label.dataset.appliesTo = item.appliesTo;
+
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.checked = true;
+        input.dataset.check = item.id;
+
+        const text = document.createElement('span');
+        text.textContent = item.label;
+
+        label.appendChild(input);
+        label.appendChild(text);
+        checklistWrap.appendChild(label);
+      });
+
+      function applySiteTypeVisibility() {
+        const rows = checklistWrap.querySelectorAll('.check-row');
+        rows.forEach(function (row) {
+          row.hidden = row.dataset.appliesTo === 'open' && state.siteType !== 'open';
+        });
+      }
+
+      /* Чтение и валидация полей */
+      function checkedValue(name, fallback) {
+        const radio = document.querySelector('input[name="' + name + '"]:checked');
+        return radio ? radio.value : fallback;
+      }
+
+      function validateResidents() {
+        const input = $('residents');
+        const error = $('residentsError');
+        const parsed = App.Calc.parseResidents(input.value);
+
+        if (parsed.ok) {
+          state.residents = parsed.value;
+          error.hidden = true;
+          error.textContent = '';
+          input.classList.remove('invalid');
+          input.removeAttribute('aria-invalid');
+          return;
+        }
+
+        error.hidden = false;
+        error.textContent = parsed.error + ' Показан расчёт для ' + state.residents + ' ' +
+          App.Utils.plural(state.residents, 'жителя', 'жителей', 'жителей') + '.';
+        input.classList.add('invalid');
+        input.setAttribute('aria-invalid', 'true');
+      }
+
+      function readDistance(inputId, errorId, optional) {
+        const input = $(inputId);
+        const error = $(errorId);
+        const raw = input.value.trim().replace(',', '.');
+
+        function markInvalid(message) {
+          error.hidden = false;
+          error.textContent = message;
+          input.classList.add('invalid');
+          input.setAttribute('aria-invalid', 'true');
+          // Возвращаем исходную строку: check.js увидит нечисловое значение и даст красный статус.
+          return raw;
+        }
+
+        if (raw === '') {
+          input.classList.remove('invalid');
+          input.removeAttribute('aria-invalid');
+
+          if (optional) {
+            error.hidden = true;
+            error.textContent = '';
+            return null;
+          }
+
+          error.hidden = false;
+          error.textContent = 'Укажите расстояние — обязательное поле.';
+          input.classList.add('invalid');
+          input.setAttribute('aria-invalid', 'true');
+          return null;
+        }
+
+        if (!/^\d+(\.\d*)?$/.test(raw)) {
+          return markInvalid('Только неотрицательное число, например 30 или 30,5.');
+        }
+
+        const value = Number(raw);
+        if (!Number.isFinite(value) || value < C.validation.distanceMin || value > C.validation.distanceMax) {
+          return markInvalid(
+            'Введите число от ' + C.validation.distanceMin + ' до ' + C.validation.distanceMax + ' м.'
+          );
+        }
+
+        error.hidden = true;
+        error.textContent = '';
+        input.classList.remove('invalid');
+        input.removeAttribute('aria-invalid');
+        return value;
+      }
+
+      /* Отрисовка Блока А */
+      function renderCalc(calc) {
+        $('totalContainers').textContent = String(calc.totalContainers);
+        $('sitesCount').textContent = String(calc.sites);
+        $('volumeBetween').textContent = App.Utils.num(calc.volumeBetween, 2) + ' м³';
+
+        $('greenPerSite').textContent = String(calc.greenPerSite);
+        $('orangePerSite').textContent = String(calc.orangePerSite);
+        $('kgoPerSite').textContent = String(calc.kgoPerSite);
+        $('totalPerSite').textContent = String(calc.totalPerSite);
+
+        const dayWord = App.Utils.plural(calc.daysBetween, 'день', 'дня', 'дней');
+        $('periodNote').innerHTML =
+          'Периодичность: <strong>' + calc.daysBetween + ' ' + dayWord + '</strong> · ' +
+          'норматив <strong>' + App.Utils.num(C.waste.normPerCapitaYear, 2) + ' м³/год</strong> на жителя.';
+
+        let installedText;
+        if (calc.sites > 1) {
+          installedText =
+            'С учётом округления: ' + calc.installedTotal + ' контейнеров на ' +
+            calc.sites + ' площадках (по ' + calc.totalPerSite + ' на каждую).';
+        } else {
+          installedText =
+            'Тип площадки: ' + (state.siteType === 'open' ? 'открытая' : 'закрытая') +
+            ' · РСО: ' + (calc.isRso ? 'да' : 'нет') + '.';
+        }
+        $('installedNote').textContent = installedText;
+
+        const warning = $('calcWarning');
+        warning.hidden = !calc.exceedsLimit;
+        warning.textContent = '';
+
+        if (calc.exceedsLimit) {
+          const title = document.createElement('strong');
+          title.textContent = calc.limitMessage;
+          warning.appendChild(title);
+
+          if (calc.limitDetails.length > 0) {
+            const list = document.createElement('ul');
+            list.className = 'alert-details';
+            calc.limitDetails.forEach(function (detail) {
+              const li = document.createElement('li');
+              li.textContent = detail;
+              list.appendChild(li);
+            });
+            warning.appendChild(list);
+          }
+        }
+      }
+
+      /* Отрисовка Блока В */
+      function renderScheme(calc, scheme) {
+        $('schemeCaption').textContent =
+          'Схема 1 площадки (всего площадок: ' + calc.sites + ')';
+
+        App.Scheme.render($('schemeSvg'), scheme);
+
+        $('geoWidth').textContent = App.Utils.num(scheme.width, 2) + ' м';
+        $('geoDepth').textContent = App.Utils.num(scheme.depth, 2) + ' м';
+        $('geoArea').textContent = App.Utils.num(scheme.area, 2) + ' м²';
+        $('geoPerimeterLabel').textContent =
+          'Периметр (' + scheme.fenceSides + ' ' + App.Utils.plural(scheme.fenceSides, 'сторона', 'стороны', 'сторон') + ')';
+        $('geoPerimeter').textContent = App.Utils.num(scheme.perimeter, 2) + ' м';
+      }
+
+      /* Отрисовка Блока Г */
+      function renderCheck(check) {
+        const verdict = $('checkVerdict');
+        verdict.className = 'verdict ' + check.status;
+        $('verdictBadge').textContent = check.statusLabel;
+        $('complianceText').textContent = check.complianceText;
+        $('normHint').textContent = check.normHint;
+
+        const box = $('checkIssues');
+        box.textContent = '';
+
+        if (check.issues.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'issues-empty';
+          empty.textContent = 'Нарушений и предупреждений нет: все применимые пункты подтверждены.';
+          box.appendChild(empty);
+          return;
+        }
+
+        check.issues.forEach(function (item) {
+          const row = document.createElement('div');
+          row.className = 'issue ' + item.status;
+
+          const text = document.createElement('div');
+          const title = document.createElement('strong');
+          title.textContent = item.label;
+          const message = document.createElement('p');
+          message.textContent = item.message;
+
+          text.appendChild(title);
+          text.appendChild(message);
+          row.appendChild(text);
+          box.appendChild(row);
+        });
+      }
+
+      /* Отрисовка Блока Д */
+      function renderBudget(budget) {
+        const body = $('budgetBody');
+        body.textContent = '';
+
+        budget.rows.forEach(function (row) {
+          const tr = document.createElement('tr');
+
+          const name = document.createElement('td');
+          name.dataset.label = 'Позиция';
+          name.textContent = row.name;
+
+          const qty = document.createElement('td');
+          qty.className = 'num';
+          qty.dataset.label = 'Кол-во';
+          qty.textContent = (row.unit === 'м²' || row.unit === 'п.м.')
+            ? App.Utils.num(row.qty, 2)
+            : App.Utils.num(row.qty, 0);
+
+          const unit = document.createElement('td');
+          unit.dataset.label = 'Ед. изм.';
+          unit.textContent = row.unit;
+
+          const price = document.createElement('td');
+          price.className = 'num';
+          price.dataset.label = 'Цена за ед.';
+
+          if (row.price == null) {
+            price.textContent = '—';
+          } else {
+            price.textContent = App.Utils.money(row.price);
+            if (row.isEstimate) {
+              const badge = document.createElement('span');
+              badge.className = 'badge';
+              badge.textContent = 'демо-цена';
+              price.appendChild(document.createTextNode(' '));
+              price.appendChild(badge);
+            }
+          }
+
+          const sum = document.createElement('td');
+          sum.className = 'num';
+          sum.dataset.label = 'Сумма';
+          sum.textContent = App.Utils.money(row.sum);
+
+          tr.appendChild(name);
+          tr.appendChild(qty);
+          tr.appendChild(unit);
+          tr.appendChild(price);
+          tr.appendChild(sum);
+          body.appendChild(tr);
+        });
+
+        const sites = budget.sites;
+        $('budgetNote').innerHTML = sites > 1
+          ? 'Количества и суммы — на <strong>1 площадку</strong>. Всего площадок: <strong>' +
+            sites + '</strong>. Итог за все площадки — ниже.'
+          : 'Количества и суммы — на <strong>1 площадку</strong>.';
+
+        const totals = $('budgetTotals');
+        totals.textContent = '';
+
+        function addRow(label, value) {
+          const row = document.createElement('div');
+          row.className = 'total-row';
+          const name = document.createElement('span');
+          name.textContent = label;
+          const amount = document.createElement('strong');
+          amount.textContent = value;
+          row.appendChild(name);
+          row.appendChild(amount);
+          totals.appendChild(row);
+        }
+
+        if (sites > 1) {
+          addRow('Себестоимость 1 площадки', App.Utils.money(budget.cost));
+          addRow('Наценка (' + budget.markupPercent + '%)', App.Utils.money(budget.markup));
+          addRow('Итоговая цена 1 площадки', App.Utils.money(budget.total));
+        } else {
+          addRow('Себестоимость', App.Utils.money(budget.cost));
+          addRow('Наценка (' + budget.markupPercent + '%)', App.Utils.money(budget.markup));
+        }
+
+        const grand = document.createElement('div');
+        grand.className = 'grand-total';
+        const grandLabel = document.createElement('span');
+        const grandValue = document.createElement('strong');
+
+        if (sites > 1) {
+          const sitesWord = App.Utils.plural(sites, 'площадку', 'площадки', 'площадок');
+          grandLabel.textContent = 'Итого за ' + sites + ' ' + sitesWord + ' (цена одной × ' + sites + ')';
+          grandValue.textContent = App.Utils.money(budget.totalAll);
+        } else {
+          grandLabel.textContent = 'Итоговая цена для заказчика';
+          grandValue.textContent = App.Utils.money(budget.total);
+        }
+
+        grand.appendChild(grandLabel);
+        grand.appendChild(grandValue);
+        totals.appendChild(grand);
+      }
+
+      /* Полный пересчёт */
+      function recalc() {
+        state.siteType = checkedValue('siteType', C.defaults.siteType);
+        state.isRso = checkedValue('rso', C.defaults.isRso ? 'yes' : 'no') === 'yes';
+        state.season = checkedValue('season', C.defaults.season);
+
+        state.access.turnaround = $('turnaround').checked;
+        state.access.accessFree = $('accessFree').checked;
+
+        checklistWrap.querySelectorAll('[data-check]').forEach(function (input) {
+          state.checklist[input.dataset.check] = input.checked;
+        });
+
+        applySiteTypeVisibility();
+        validateResidents();
+
+        state.distances.house = readDistance('houseDistance', 'houseDistanceError', false);
+        state.distances.playground = readDistance('playgroundDistance', 'playgroundDistanceError', false);
+        state.distances.medical = readDistance('medicalDistance', 'medicalDistanceError', true);
+
+        const calc = App.Calc.compute({
+          residents: state.residents,
+          isRso: state.isRso,
+          season: state.season
+        });
+
+        const scheme = App.Scheme.compute({
+          greenPerSite: calc.greenPerSite,
+          orangePerSite: calc.orangePerSite,
+          siteType: state.siteType
+        });
+
+        const check = App.Check.evaluate({
+          isRso: state.isRso,
+          siteType: state.siteType,
+          houseDistance: state.distances.house,
+          playgroundDistance: state.distances.playground,
+          medicalDistance: state.distances.medical,
+          turnaround: state.access.turnaround,
+          accessFree: state.access.accessFree,
+          checklist: state.checklist
+        });
+
+        const budget = App.Budget.compute({
+          calc: calc,
+          scheme: scheme,
+          siteType: state.siteType
+        });
+
+        renderCalc(calc);
+        renderScheme(calc, scheme);
+        renderCheck(check);
+        renderBudget(budget);
+      }
+
+      $('printBtn').addEventListener('click', function () {
+        window.print();
+      });
+
+      document.addEventListener('input', recalc);
+      document.addEventListener('change', recalc);
+
+      recalc();
+    })();
+  </script>
+</body>
+</html>

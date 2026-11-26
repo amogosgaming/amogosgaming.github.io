@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Информация о контейнерной площадке АО «Спецавтобаза»: график вывоза, правила РСО, сообщение о проблеме.">
+  <title>Контейнерная площадка — АО «Спецавтобаза»</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="qr-page">
+  <main class="qr-shell">
+    <header class="qr-head">
+      <div class="qr-brand"><span id="qrOrgName">АО «Спецавтобаза»</span> · информация о площадке</div>
+      <div class="qr-plate">
+        <span class="qr-label">Контейнерная площадка</span>
+        <strong id="siteId">ЕКБ-0001</strong>
+        <span class="qr-address" id="siteAddress">ул. Сулимова, 23, Екатеринбург</span>
+      </div>
+      <span class="status-pill" id="siteStatus">Данные площадки</span>
+    </header>
+
+    <!-- График вывоза -->
+    <section class="qr-card" aria-labelledby="schedule-title">
+      <h2 id="schedule-title">График вывоза</h2>
+      <div class="schedule-row">
+        <span class="schedule-name">ТКО</span>
+        <span class="schedule-value" id="tkoSchedule">—</span>
+      </div>
+      <div class="schedule-row">
+        <span class="schedule-name">КГО</span>
+        <span class="schedule-value" id="kgoSchedule">—</span>
+      </div>
+      <p class="qr-note" id="scheduleNote"></p>
+    </section>
+
+    <!-- Правила раздельного сбора -->
+    <section class="qr-card" aria-labelledby="rules-title">
+      <h2 id="rules-title">
+        Правила раздельного сбора
+        <span class="tag orange">оранжевый контейнер</span>
+      </h2>
+      <p class="qr-card-sub">Складывайте в оранжевый контейнер только чистое вторсырьё.</p>
+      <div class="rules-grid">
+        <div class="rules-col can">
+          <div class="rules-head">
+            <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+              <circle cx="10" cy="10" r="9" fill="#18794e"></circle>
+              <path d="M5.8 10.4l2.7 2.7 5.7-6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            Можно
+          </div>
+          <ul id="rulesCan"></ul>
+        </div>
+        <div class="rules-col cannot">
+          <div class="rules-head">
+            <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+              <circle cx="10" cy="10" r="9" fill="#b3261e"></circle>
+              <path d="M6.5 6.5l7 7M13.5 6.5l-7 7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"></path>
+            </svg>
+            Нельзя
+          </div>
+          <ul id="rulesCannot"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Сообщить о проблеме -->
+    <section class="qr-card" aria-labelledby="report-title">
+      <h2 id="report-title">Нашли проблему?</h2>
+      <p class="qr-card-sub">Переполнен контейнер, сломан отсек или не вывезли отходы — сообщите региональному оператору.</p>
+      <a class="qr-cta" id="complaintLink" href="#" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M12 3.2 22 21H2L12 3.2Z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"></path>
+          <path d="M12 9v5.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"></path>
+          <circle cx="12" cy="17.6" r="1.15" fill="#fff"></circle>
+        </svg>
+        Сообщить о проблеме
+      </a>
+      <p class="qr-note">
+        Если форма не открылась, позвоните:
+        <a id="formPhone" href="tel:88007750096">8 800 775 00 96</a>.
+      </p>
+    </section>
+
+    <!-- Контакты -->
+    <section class="qr-card" aria-labelledby="contacts-title">
+      <h2 id="contacts-title">Контакты регионального оператора</h2>
+      <dl class="contacts">
+        <dt>Телефон</dt>
+        <dd><a id="contactPhone" href="tel:88007750096">8 800 775 00 96</a></dd>
+        <dt>Сайт</dt>
+        <dd><a id="contactSite" href="https://sab-ekb.ru" target="_blank" rel="noopener">sab-ekb.ru</a></dd>
+      </dl>
+    </section>
+
+    <footer class="qr-footer">
+      <p id="qrFooterText">Прототип. Расчёты по ТЗ АО «Спецавтобаза» и СанПиН 2.1.3684-21. Цены — оценочные.</p>
+    </footer>
+  </main>
+
+  <script src="config.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      const C = window.APP_CONFIG;
+      const $ = function (id) { return document.getElementById(id); };
+
+      $('qrOrgName').textContent = C.meta.orgName;
+      $('qrFooterText').textContent = C.meta.footerText;
+
+      /* id площадки из QR-ссылки. Без параметра показываем карточку по умолчанию. */
+      const params = new URLSearchParams(window.location.search);
+      const rawId = (params.get('id') || '').trim();
+      const hasId = rawId !== '';
+      const isKnownDefault = !hasId || rawId === C.qr.defaultId;
+      const siteId = hasId ? rawId : C.qr.defaultId;
+
+      $('siteId').textContent = siteId;
+      $('siteAddress').textContent = isKnownDefault
+        ? C.qr.defaultAddress
+        : 'Адрес указан в паспорте площадки';
+      $('siteStatus').textContent = hasId ? 'Площадка по QR-коду' : 'Данные площадки';
+
+      /* График вывоза */
+      $('tkoSchedule').textContent = '';
+      const summer = document.createElement('span');
+      summer.textContent = C.qr.schedule.tko.summer;
+      const winter = document.createElement('span');
+      winter.textContent = C.qr.schedule.tko.winter;
+      $('tkoSchedule').appendChild(summer);
+      $('tkoSchedule').appendChild(document.createElement('br'));
+      $('tkoSchedule').appendChild(winter);
+
+      $('kgoSchedule').textContent = C.qr.schedule.kgo.text;
+      $('scheduleNote').textContent = C.qr.schedule.tko.note;
+
+      /* Правила РСО: строим списки из config.js. */
+      const checkIcon =
+        '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
+          '<circle cx="8" cy="8" r="7" fill="#18794e"></circle>' +
+          '<path d="M4.6 8.2l2.2 2.2 4.6-4.8" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>' +
+        '</svg>';
+
+      const crossIcon =
+        '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
+          '<circle cx="8" cy="8" r="7" fill="#b3261e"></circle>' +
+          '<path d="M5.4 5.4l5.2 5.2M10.6 5.4l-5.2 5.2" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round"></path>' +
+        '</svg>';
+
+      function fillRuleList(target, items, icon) {
+        target.textContent = '';
+        items.forEach(function (text) {
+          const li = document.createElement('li');
+          li.insertAdjacentHTML('beforeend', icon);
+          const label = document.createElement('span');
+          label.textContent = text;
+          li.appendChild(label);
+          target.appendChild(li);
+        });
+      }
+
+      fillRuleList($('rulesCan'), C.qr.rsoRules.can, checkIcon);
+      fillRuleList($('rulesCannot'), C.qr.rsoRules.cannot, crossIcon);
+
+      /* Ссылка на Google Form с подстановкой id площадки. */
+      const separator = C.links.complaintFormUrl.indexOf('?') === -1 ? '?' : '&';
+      $('complaintLink').href =
+        C.links.complaintFormUrl +
+        separator +
+        encodeURIComponent(C.links.complaintIdParam) +
+        '=' +
+        encodeURIComponent(siteId);
+
+      /* Контакты */
+      const phoneHref = 'tel:' + C.contacts.phone.replace(/[^\d+]/g, '');
+      const siteHref = /^https?:\/\//.test(C.contacts.site)
+        ? C.contacts.site
+        : 'https://' + C.contacts.site;
+
+      $('contactPhone').textContent = C.contacts.phone;
+      $('contactPhone').href = phoneHref;
+      $('contactSite').textContent = C.contacts.site;
+      $('contactSite').href = siteHref;
+      $('formPhone').textContent = C.contacts.phone;
+      $('formPhone').href = phoneHref;
+    })();
+  </script>
+</body>
+</html>
